@@ -787,13 +787,14 @@ func GetBuildingPermits(db *sql.DB) {
 	// While doing unit-testing keep the limit value to 500
 	// later you could change it to 1000, 2000, 10,000, etc.
 	var url = "https://data.cityofchicago.org/resource/ydr8-5enu.json?$limit=50"
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    300 * time.Second,
-		DisableCompression: true,
-	}
+	// tr := &http.Transport{
+	// 	MaxIdleConns:       10,
+	// 	IdleConnTimeout:    300 * time.Second,
+	// 	// DisableCompression: true,
+	// }
 
-	client := &http.Client{Transport: tr}
+	// client := &http.Client{Transport: tr}
+	client := &http.Client{}
 
 	res, err := client.Get(url)
 	if err != nil {
@@ -803,8 +804,14 @@ func GetBuildingPermits(db *sql.DB) {
 	fmt.Println("Received data from SODA REST API for Building Permits")
 
 	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println(string(body))
+
 	var building_data_list BuildingPermitsJsonRecords
+	fmt.Println("Building Permits: Unmarshalling JSON data")
+	fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
 	json.Unmarshal(body, &building_data_list)
+	fmt.Println("Building Permits: Unmarshalling JSON data completed")
+	fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
 
 	s := fmt.Sprintf("\n\n Building Permits: number of SODA records received = %d\n\n", len(building_data_list))
 	io.WriteString(os.Stdout, s)
