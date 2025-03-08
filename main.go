@@ -856,8 +856,8 @@ func GetBuildingPermits(db *sql.DB) {
 
 		xcordinate := building_data_list[i].Xcoordinate
 		ycordinate := building_data_list[i].Ycoordinate
-		latitutde := building_data_list[i].Latitude
-		longitude := building_data_list[i].Longitude
+		// latitutde := building_data_list[i].Latitude
+		// longitude := building_data_list[i].Longitude
 		// census_tract := building_data_list[i].CensusTract
 
 		// // Convert X/Y Coordinates to Float64
@@ -885,7 +885,7 @@ func GetBuildingPermits(db *sql.DB) {
 		// // print something to see the data
 		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "latitutde", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "community_area") values($1, $2, $3, $4, $5, $6, $7)`
 
 		_, err = db.Exec(
 			sql,
@@ -894,8 +894,8 @@ func GetBuildingPermits(db *sql.DB) {
 			total_fee,
 			xcordinate,
 			ycordinate,
-			latitutde,
-			longitude,
+			// latitutde,
+			// longitude,
 			community_area)
 
 		if err != nil {
