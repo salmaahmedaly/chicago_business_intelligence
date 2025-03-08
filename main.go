@@ -804,6 +804,7 @@ func GetBuildingPermits(db *sql.DB) {
 	fmt.Println("Received data from SODA REST API for Building Permits")
 
 	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("Building Permits: Received data from SODA REST API for Building Permits")
 	fmt.Println(string(body))
 
 	var building_data_list BuildingPermitsJsonRecords
@@ -811,9 +812,9 @@ func GetBuildingPermits(db *sql.DB) {
 	fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
 	json.Unmarshal(body, &building_data_list)
 	fmt.Println("Building Permits: Unmarshalling JSON data completed")
-	fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
+	fmt.Println("Building Permits: Number of records received after unmarshal= ", len(building_data_list))
 
-	s := fmt.Sprintf("\n\n Building Permits: number of SODA records received = %d\n\n", len(building_data_list))
+	s := fmt.Sprintf("\n\n Building Permits: number of SODA records received... = %d\n\n", len(building_data_list))
 	io.WriteString(os.Stdout, s)
 
 	for i := 0; i < len(building_data_list); i++ {
@@ -895,7 +896,7 @@ func GetBuildingPermits(db *sql.DB) {
 			total_fee,
 			xcordinate,
 			ycordinate,
-			longitude,
+
 			community_area)
 
 		if err != nil {
