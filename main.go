@@ -240,7 +240,7 @@ func main() {
 
 		// go GetCommunityAreaUnemployment(db)
 		go GetBuildingPermits(db)
-		// go GetTaxiTrips(db)
+		// go GetTaxiTrips(db)//all set!
 
 		// go GetCovidDetails(db)
 		// go GetCCVIDetails(db)
@@ -841,6 +841,17 @@ func GetBuildingPermits(db *sql.DB) {
 		if community_area == "" {
 			continue
 		}
+
+		latitude := building_data_list[i].Latitude
+		if latitude == "" {
+			continue
+		}
+
+		longitude := building_data_list[i].Longitude
+		if longitude == "" {
+			continue
+		}
+
 		// census_tract := building_data_list[i].CensusTract
 
 		// // Convert X/Y Coordinates to Float64
@@ -874,7 +885,6 @@ func GetBuildingPermits(db *sql.DB) {
 			sql,
 			permit_id,
 			permit_type,
-			permit_code,
 			total_fee,
 			latitude,
 			longitude,
