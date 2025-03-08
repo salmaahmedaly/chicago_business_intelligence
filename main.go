@@ -191,6 +191,9 @@ type CCVIJsonRecords []struct {
 	Community_name             string `json:"community_area_name"`
 	CCVI_score                 string `json:"ccvi_score"`
 	CCVI_category              string `json:"ccvi_category"`
+	Location                   struct {
+		Coordinates [2]float64 `json:"coordinates"`
+	} `json:"location"`
 }
 
 // Declare my database connection
@@ -249,7 +252,6 @@ func GetZipCode(lat, lon float64) string {
 	}
 	return addressList[0].PostalCode
 }
-
 
 func GetAirportName(lat, lon float64) string {
 	// O'Hare Airport Coordinates
@@ -310,8 +312,8 @@ func main() {
 		go GetBuildingPermits(db)
 		go GetTaxiTrips(db)
 
-		// go GetCovidDetails(db)
-		// go GetCCVIDetails(db)
+		go GetCovidDetails(db)
+		go GetCCVIDetails(db)
 
 		http.HandleFunc("/", handler)
 
@@ -367,7 +369,7 @@ func GetTaxiTrips(db *sql.DB) {
 	// https://developers.google.com/maps/documentation/geocoding/get-api-key?authuser=2
 
 	geocoder.ApiKey = "AIzaSyD737jPAyi_Ji947tJFgeRynYBUSRQeTqw"
-	//TODO: add a columns for airports: 
+	//TODO: add a columns for airports:
 	// Chicago: O’Hare lat and long 41.9803° N, 87.9090° W
 	// Chicago: Midway lat and long 41.7868° N, 87.7522° W
 
@@ -543,7 +545,7 @@ func GetTaxiTrips(db *sql.DB) {
 		pickup_airport := GetAirportName(pickup_centroid_latitude_float, pickup_centroid_longitude_float)
 
 		sql := `INSERT INTO taxi_trips ("trip_id", "trip_start_timestamp", "trip_end_timestamp", "pickup_centroid_latitude", "pickup_centroid_longitude", "dropoff_centroid_latitude", "dropoff_centroid_longitude", "pickup_zip_code", 
-			"dropoff_zip_code", "pickup_airport") values($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+			"dropoff_zip_code", "pickup_airport") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 		_, err = db.Exec(
 			sql,
@@ -555,7 +557,7 @@ func GetTaxiTrips(db *sql.DB) {
 			dropoff_centroid_latitude,
 			dropoff_centroid_longitude,
 			pickup_zip_code,
-			dropoff_zip_code,  
+			dropoff_zip_code,
 			pickup_airport)
 
 		if err != nil {
@@ -1225,7 +1227,7 @@ func GetCovidDetails(db *sql.DB) {
 	}
 
 	fmt.Println("Created Table for Covid Data")
-	
+
 	// While doing unit-testing keep the limit value to 500
 	// later you could change it to 1000, 2000, 10,000, etc.
 	var url = "https://data.cityofchicago.org/resource/yhhz-zm2v.json?$limit=50"
@@ -1254,7 +1256,6 @@ func GetCovidDetails(db *sql.DB) {
 
 	for i := 0; i < len(covid_data_list); i++ {
 
-		
 		zip_code := covid_data_list[i].Zip_code
 		if zip_code == "" {
 			continue
@@ -1312,7 +1313,7 @@ func GetCovidDetails(db *sql.DB) {
 
 		sql := `INSERT INTO covid_data ("zip_code", "week_number", "week_start", "week_end", "cases_weekly", "cases_cumulative", "case_rate_weekly", "case_rate_cumulative", "percent_tested_positive_weekly", "percent_tested_positive_cumulative", "population") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		, $11)`
-		
+
 		_, err = db.Exec(
 			sql,
 			zip_code,
@@ -1331,8 +1332,6 @@ func GetCovidDetails(db *sql.DB) {
 			panic(err)
 		}
 	}
-
-
 
 }
 
@@ -1367,170 +1366,90 @@ func GetCovidDetails(db *sql.DB) {
 // ":@computed_region_43wa_7qmu":"30"
 // //////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////
-func GetCCVIDetails(db *sql.DB) {
 
+func GetCCVIDetails(db *sql.DB) {
 	fmt.Println("GetCCVIDetails: Collecting CCVI Data")
 
-	// create table
+	// Drop existing table
 	drop_table := `drop table if exists ccvi_data`
 	_, err := db.Exec(drop_table)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error dropping ccvi_data table: %v", err)
 	}
-	geocoder.ApiKey = "AIzaSyD737jPAyi_Ji947tJFgeRynYBUSRQeTqw"
 
-
+	// Create table
 	create_table := `CREATE TABLE IF NOT EXISTS "ccvi_data" (
-						"id"   SERIAL ,
+						"id" SERIAL PRIMARY KEY,
 						"geography_type" VARCHAR(255),
 						"community_area_or_zip" VARCHAR(255) UNIQUE,
 						"community_area_name" VARCHAR(255),
 						"ccvi_score" VARCHAR(255),
 						"ccvi_category" VARCHAR(255),
-						"rank_socioeconomic_status" VARCHAR(255),
-						"rank_household_composition" VARCHAR(255),
-						"rank_adults_no_pcp" VARCHAR(255),
-						"rank_cumulative_mobility_ratio" VARCHAR(255),
-						"rank_frontline_essential_workers" VARCHAR(255),
-						"rank_age_65_plus" VARCHAR(255),
-						"rank_comorbid_conditions" VARCHAR(255),
-						"rank_covid_19_incidence_rate" VARCHAR(255),
-						"rank_covid_19_hospital_admission_rate" VARCHAR(255),
-						"rank_covid_19_crude_mortality_rate" VARCHAR(255),
 						"latitude" DOUBLE PRECISION,
 						"longitude" DOUBLE PRECISION,
-						"zip_code" VARCHAR(255),
-						PRIMARY KEY ("id")
+						"zip_code" VARCHAR(255)
 					);`
 
-	_, _err := db.Exec(create_table)
-	if _err != nil {
-		panic(_err)
+	_, err = db.Exec(create_table)
+	if err != nil {
+		log.Fatalf("Error creating ccvi_data table: %v", err)
 	}
 
 	fmt.Println("Created Table for CCVI Data")
 
-	// While doing unit-testing keep the limit value to 500
-	// later you could change it to 1000, 2000, 10,000, etc.
+	// Fetch data
 	var url = "https://data.cityofchicago.org/resource/9mrw-3jzs.json?$limit=50"
-
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    300 * time.Second,
-		DisableCompression: true,
-	}
-
-	client := &http.Client{Transport: tr}
-
-	res, err := client.Get(url)
+	res, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error fetching CCVI data: %v", err)
 	}
+	defer res.Body.Close()
 
-	fmt.Println("Received data from SODA REST API for CCVI")
-
+	// Parse JSON
 	body, _ := ioutil.ReadAll(res.Body)
 	var ccvi_data_list CCVIJsonRecords
-	json.Unmarshal(body, &ccvi_data_list)
+	err = json.Unmarshal(body, &ccvi_data_list)
+	if err != nil {
+		log.Fatalf("Error unmarshalling CCVI data: %v", err)
+	}
 
-	s := fmt.Sprintf("\n\n CCVI: number of SODA records received = %d\n\n", len(ccvi_data_list))
-	io.WriteString(os.Stdout, s)
-	
+	fmt.Printf("CCVI records received: %d\n", len(ccvi_data_list))
+
+	// Process data
 	for i := 0; i < len(ccvi_data_list); i++ {
-		
-		geography_type := ccvi_data_list[i].Geography_type
-		if geography_type == "" {
-			continue
-		}
-
-		community_area_or_zip := ccvi_data_list[i].Community_area_or_zip
-		if community_area_or_zip == "" {
-			continue
-		}
-
-		community_area_name := ccvi_data_list[i].Community_area_name
-		if community_area_name == "" {
-			continue
-		}
-
-		ccvi_score := ccvi_data_list[i].Ccvi_score
-		if ccvi_score == "" {
-			continue
-		}
-
-		ccvi_category := ccvi_data_list[i].Ccvi_category
-		if ccvi_category == "" {
-			continue
-		}
-
-		rank_socioeconomic_status := ccvi_data_list[i].Rank_socioeconomic_status
-		if rank_socioeconomic_status == "" {
-			continue
-		}
-
-		rank_household_composition := ccvi_data_list[i].Rank_household_composition
-		if rank_household_composition == "" {
-			continue
-		}
-
-		rank_adults_no_pcp := ccvi_data_list[i].Rank_adults_no_pcp
-		if rank_adults_no_pcp == "" {
-			continue
-		}
-
-		rank_cumulative_mobility_ratio := ccvi_data_list[i].Rank_cumulative_mobility_ratio
-		if rank_cumulative_mobility_ratio == "" {
-			continue
-		}
-
-		rank_frontline_essential_workers := ccvi_data_list[i].Rank_frontline_essential_workers
-		if rank_frontline_essential_workers == "" {
-			continue
-		}
-
-		rank_age_65_plus := ccvi_data_list[i].Rank_age_65_plus
-		if rank_age_65_plus == "" {
-			continue
-		}
-
-		rank_comorbid_conditions := ccvi_data_list[i].Rank_comorbid_conditions
-		if rank_comorbid_conditions == "" {
-			continue
-		}
-
-		rank_covid_19_incidence_rate := ccvi_data_list[i].Rank_covid_19_incidence_rate
-		if rank_covid_19_incidence_rate == "" {
-			continue
-		}
-
-		rank_covid_19_hospital_admission_rate := ccvi_data_list[i].Rank_covid_19_hospital_admission_rate
-		if rank_covid_19_hospital_admission_rate == "" {
-			continue
-		}
-
-		rank_covid_19_crude_mortality_rate := ccvi_data_list[i].Rank_covid_19_crude_mortality_rate
-		if rank_covid_19_crude_mortality_rate == "" {
-			continue
-		}
-	
 		latitude := ccvi_data_list[i].Location.Coordinates[1]
-		if latitude == "" {
-			continue
-		}
-
 		longitude := ccvi_data_list[i].Location.Coordinates[0]
-		if longitude == "" {
+
+		// Check valid latitude and longitude
+		if latitude == 0.0 || longitude == 0.0 {
 			continue
 		}
 
-		// get zipcode using geo-coder API 
-		zip_code := geocoder.GetZipCode(latitude, longitude)
+		// Get zip code
+		zip_code := GetZipCode(latitude, longitude)
 		if zip_code == "" {
 			continue
 		}
 
+		// Insert data
+		sql := `INSERT INTO ccvi_data (
+			"geography_type", "community_area_or_zip", "community_area_name", 
+			"ccvi_score", "ccvi_category", "latitude", "longitude", "zip_code") 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
-		sql := `INSERT INTO ccvi_data ("geography_type", "community_area_or_zip", "community_area_name", "ccvi_score", "ccvi_category", "rank_socioeconomic_status", "rank_household_composition", "rank_adults_no_pcp", "rank_cumulative_mobility_ratio", "rank_frontline_essential_workers", "rank_age_65_plus", "rank_comorbid_conditions", "rank_covid_19_incidence_rate", "rank_covid_19_hospital_admission_rate", "rank_covid_19_crude_mortality_rate", "latitude", "longitude", "zip_code") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`
+		_, err = db.Exec(sql,
+			ccvi_data_list[i].Geography_type,
+			ccvi_data_list[i].Community_area_or_ZIP_code,
+			ccvi_data_list[i].Community_name,
+			ccvi_data_list[i].CCVI_score,
+			ccvi_data_list[i].CCVI_category,
+			latitude,
+			longitude,
+			zip_code)
 
-
+		if err != nil {
+			log.Printf("Error inserting CCVI record: %v", err)
+		}
+	}
+	fmt.Println("Completed inserting CCVI data")
 }
