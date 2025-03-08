@@ -794,7 +794,7 @@ func GetBuildingPermits(db *sql.DB) {
 	// }
 
 	// client := &http.Client{Transport: tr}
-	client := &http.Client{}
+	client := &http.Client{Timeout: 300 * time.Second}
 
 	res, err := client.Get(url)
 	if err != nil {
