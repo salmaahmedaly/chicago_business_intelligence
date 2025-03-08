@@ -1398,7 +1398,7 @@ func GetCCVIDetails(db *sql.DB) {
 	fmt.Println("Created Table for CCVI Data")
 
 	// Fetch data
-	var url = "https://data.cityofchicago.org/resource/xhc6-88s9.json?$limit=50"
+	var url = "https://data.cityofchicago.org/resource/xhc6-88s9.json"
 
 	res, err := http.Get(url)
 	if err != nil {
