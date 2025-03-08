@@ -367,10 +367,7 @@ func GetTaxiTrips(db *sql.DB) {
 	// Get your geocoder.ApiKey from here :
 	// https://developers.google.com/maps/documentation/geocoding/get-api-key?authuser=2
 
-	geocoder.ApiKey = "AIzaSyD737jPAyi_Ji947tJFgeRynYBUSRQeTqw"
-	//TODO: add a columns for airports:
-	// Chicago: O’Hare lat and long 41.9803° N, 87.9090° W
-	// Chicago: Midway lat and long 41.7868° N, 87.7522° W
+	geocoder.ApiKey = "ADD_YOUR_API_KEY_HERE"
 
 	drop_table := `drop table if exists taxi_trips`
 	_, err := db.Exec(drop_table)
@@ -388,8 +385,7 @@ func GetTaxiTrips(db *sql.DB) {
 						"dropoff_centroid_latitude" DOUBLE PRECISION, 
 						"dropoff_centroid_longitude" DOUBLE PRECISION, 
 						"pickup_zip_code" VARCHAR(255), 
-						"dropoff_zip_code" VARCHAR(255),
-						"pickup_airport" VARCHAR(255),
+						"dropoff_zip_code" VARCHAR(255), 
 						PRIMARY KEY ("id") 
 					);`
 
@@ -434,6 +430,7 @@ func GetTaxiTrips(db *sql.DB) {
 	var taxi_trips_list_1 TaxiTripsJsonRecords
 	json.Unmarshal(body_1, &taxi_trips_list_1)
 
+
 	// Get the Taxi Trip list for rideshare companies like Uber/Lyft list
 	// Transportation-Network-Providers-Trips:
 	var url_2 = "https://data.cityofchicago.org/resource/m6dm-c72p.json?$limit=500"
@@ -452,9 +449,11 @@ func GetTaxiTrips(db *sql.DB) {
 	s := fmt.Sprintf("\n\n Transportation-Network-Providers-Trips number of SODA records received = %d\n\n", len(taxi_trips_list_2))
 	io.WriteString(os.Stdout, s)
 
+
 	// Add the Taxi medallions list & rideshare companies like Uber/Lyft list
 
 	taxi_trips_list := append(taxi_trips_list_1, taxi_trips_list_2...)
+
 
 	// Process the list
 
@@ -541,10 +540,8 @@ func GetTaxiTrips(db *sql.DB) {
 		dropoff_address := dropoff_address_list[0]
 		dropoff_zip_code := dropoff_address.PostalCode
 
-		pickup_airport := GetAirportName(pickup_centroid_latitude_float, pickup_centroid_longitude_float)
-
 		sql := `INSERT INTO taxi_trips ("trip_id", "trip_start_timestamp", "trip_end_timestamp", "pickup_centroid_latitude", "pickup_centroid_longitude", "dropoff_centroid_latitude", "dropoff_centroid_longitude", "pickup_zip_code", 
-			"dropoff_zip_code", "pickup_airport") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+			"dropoff_zip_code") values($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 		_, err = db.Exec(
 			sql,
@@ -556,8 +553,7 @@ func GetTaxiTrips(db *sql.DB) {
 			dropoff_centroid_latitude,
 			dropoff_centroid_longitude,
 			pickup_zip_code,
-			dropoff_zip_code,
-			pickup_airport)
+			dropoff_zip_code)
 
 		if err != nil {
 			panic(err)
@@ -568,6 +564,7 @@ func GetTaxiTrips(db *sql.DB) {
 	fmt.Println("Completed Inserting Rows into the TaxiTrips Table")
 
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
