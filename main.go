@@ -784,7 +784,7 @@ func GetBuildingPermits(db *sql.DB) {
 
 	// While doing unit-testing keep the limit value to 500
 	// later you could change it to 1000, 2000, 10,000, etc.
-	var url = "https://data.cityofchicago.org/resource/building-permits.json?$limit=100"
+	var url = "https://data.cityofchicago.org/resource/ydr8-5enu.json?$limit=50"
 
 	tr := &http.Transport{
 		MaxIdleConns:       10,
@@ -815,6 +815,7 @@ func GetBuildingPermits(db *sql.DB) {
 		// We will use the simplest method: drop records that have messy/dirty/missing data
 		// Any record that has messy/dirty/missing data we don't enter it in the data lake/table
 		fmt.Println("Building Permits: Processing Record Number: ", i)
+		fmt.Println("Building Permits: Processing Record Number: ", building_data_list[i])
 		permit_id := building_data_list[i].PermitID
 		if permit_id == "" {
 			continue
