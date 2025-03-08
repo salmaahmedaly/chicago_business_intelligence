@@ -132,8 +132,8 @@ type BuildingPermitsJsonRecords []struct {
 	PermitID      string `json:"id"`
 	PermitType    string `json:"permit_type"`
 	TotalFee      string `json:"total_fee"`
-	Latitude      string `json:"latitude"`
-	Longitude     string `json:"longitude"`
+	xcordinate    string `json:"xcoordinate"`
+	ycordinate    string `json:"ycordinate"`
 	CommunityArea string `json:"community_area"`
 }
 
@@ -770,8 +770,8 @@ func GetBuildingPermits(db *sql.DB) {
 		"permit_type" VARCHAR(255),  
 		"total_fee" VARCHAR(255),
 		"community_area" VARCHAR(255), 
-		"latitude" DOUBLE PRECISION,
-		"longitude" DOUBLE PRECISION,
+		"xcordinate" DOUBLE PRECISION,
+		"ycordinate" DOUBLE PRECISION,
 		"zip_code" VARCHAR(255),
 		
 		PRIMARY KEY ("id") 
@@ -849,13 +849,13 @@ func GetBuildingPermits(db *sql.DB) {
 			continue
 		}
 
-		latitude := building_data_list[i].Latitude
-		if latitude == "" {
+		xcordinate := building_data_list[i].xcordinate
+		if xcordinate == "" {
 			continue
 		}
 
-		longitude := building_data_list[i].Longitude
-		if longitude == "" {
+		ycordinate := building_data_list[i].ycordinate
+		if ycordinate == "" {
 			continue
 		}
 
@@ -886,14 +886,15 @@ func GetBuildingPermits(db *sql.DB) {
 		// // print something to see the data
 		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "latitude", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
 
 		_, err = db.Exec(
 			sql,
 			permit_id,
 			permit_type,
 			total_fee,
-			latitude,
+			xcordinate,
+			ycordinate,
 			longitude,
 			community_area)
 
