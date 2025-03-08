@@ -129,13 +129,13 @@ type UnemploymentJsonRecords []struct {
 }
 
 type BuildingPermitsJsonRecords []struct {
-	PermitID      string `json:"id"`
-	PermitType    string `json:"permit_type"`
-	TotalFee      string `json:"total_fee"`
-	Xcoordinate   string `json:"xcoordinate"`
-	Ycoordinate   string `json:"ycoordinate"`
-	Latitude      string `json:"latitude"`
-	Longitude     string `json:"longitude"`
+	PermitID    string `json:"id"`
+	PermitType  string `json:"permit_type"`
+	TotalFee    string `json:"total_fee"`
+	Xcoordinate string `json:"xcoordinate"`
+	Ycoordinate string `json:"ycoordinate"`
+	// Latitude      string `json:"latitude"`
+	// Longitude     string `json:"longitude"`
 	CommunityArea string `json:"community_area"`
 }
 
@@ -774,11 +774,10 @@ func GetBuildingPermits(db *sql.DB) {
 		"community_area" VARCHAR(255), 
 		"xcordinate" DOUBLE PRECISION,
 		"ycordinate" DOUBLE PRECISION,
-		"zip_code" VARCHAR(255),
 		
 		PRIMARY KEY ("id") 
 	);`
-
+	//add zip code
 	_, _err := db.Exec(create_table)
 	if _err != nil {
 		panic(_err)
@@ -838,11 +837,6 @@ func GetBuildingPermits(db *sql.DB) {
 		if permit_type == "" {
 			continue
 		}
-
-		// permit_code := building_data_list[i].PermitCode
-		// if permit_code == "" {
-		// 	continue
-		// }
 
 		total_fee := building_data_list[i].TotalFee
 		if total_fee == "" {
