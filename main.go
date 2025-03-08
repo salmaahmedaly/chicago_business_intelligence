@@ -240,9 +240,9 @@ func main() {
 		// build and fine-tune the functions to pull data from the different data sources
 		// The following code snippets show you how to pull data from different data sources
 
-		// go GetCommunityAreaUnemployment(db)
-		go GetBuildingPermits(db)
-		// go GetTaxiTrips(db)//all set!
+		go GetCommunityAreaUnemployment(db)
+		go GetBuildingPermits(db) //TODO: convert coordinates to lat and long then zip code
+		go GetTaxiTrips(db)       //all set!
 
 		// go GetCovidDetails(db)
 		// go GetCCVIDetails(db)
@@ -879,7 +879,7 @@ func GetBuildingPermits(db *sql.DB) {
 		// // print something to see the data
 		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "community_area") values($1, $2, $3, $4, $5, $6, $7)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "community_area") values($1, $2, $3, $4, $5, $6)`
 
 		_, err = db.Exec(
 			sql,
