@@ -132,8 +132,10 @@ type BuildingPermitsJsonRecords []struct {
 	PermitID      string `json:"id"`
 	PermitType    string `json:"permit_type"`
 	TotalFee      string `json:"total_fee"`
-	xcordinate    string `json:"xcoordinate"`
-	ycordinate    string `json:"ycordinate"`
+	Xcoordinate   string `json:"xcoordinate"`
+	Ycoordinate   string `json:"ycoordinate"`
+	Latitude      string `json:"latitude"`
+	Longitude     string `json:"longitude"`
 	CommunityArea string `json:"community_area"`
 }
 
@@ -813,6 +815,8 @@ func GetBuildingPermits(db *sql.DB) {
 	json.Unmarshal(body, &building_data_list)
 	fmt.Println("Building Permits: Unmarshalling JSON data completed")
 	fmt.Println("Building Permits: Number of records received after unmarshal= ", len(building_data_list))
+	// print first 5 records
+	fmt.Println("Building Permits: First 5 records received after unmarshal= ", building_data_list[:5])
 
 	s := fmt.Sprintf("\n\n Building Permits: number of SODA records received... = %d\n\n", len(building_data_list))
 	io.WriteString(os.Stdout, s)
@@ -850,16 +854,10 @@ func GetBuildingPermits(db *sql.DB) {
 			continue
 		}
 
-		xcordinate := building_data_list[i].xcordinate
-		if xcordinate == "" {
-			continue
-		}
-
-		ycordinate := building_data_list[i].ycordinate
-		if ycordinate == "" {
-			continue
-		}
-
+		xcordinate := building_data_list[i].Xcoordinate
+		ycordinate := building_data_list[i].Ycoordinate
+		latitutde := building_data_list[i].Latitude
+		longitude := building_data_list[i].Longitude
 		// census_tract := building_data_list[i].CensusTract
 
 		// // Convert X/Y Coordinates to Float64
@@ -887,7 +885,7 @@ func GetBuildingPermits(db *sql.DB) {
 		// // print something to see the data
 		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "latitutde", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 		_, err = db.Exec(
 			sql,
@@ -896,7 +894,8 @@ func GetBuildingPermits(db *sql.DB) {
 			total_fee,
 			xcordinate,
 			ycordinate,
-
+			latitutde,
+			longitude,
 			community_area)
 
 		if err != nil {
