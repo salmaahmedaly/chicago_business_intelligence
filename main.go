@@ -788,9 +788,9 @@ func GetBuildingPermits(db *sql.DB) {
 	// later you could change it to 1000, 2000, 10,000, etc.
 	var url = "https://data.cityofchicago.org/resource/ydr8-5enu.json?$limit=50"
 	tr := &http.Transport{
-		MaxIdleConns:    10,
-		IdleConnTimeout: 300 * time.Second,
-		// DisableCompression: true,
+		MaxIdleConns:       10,
+		IdleConnTimeout:    300 * time.Second,
+		DisableCompression: true,
 	}
 
 	client := &http.Client{Transport: tr}
