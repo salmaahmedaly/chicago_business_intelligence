@@ -1321,7 +1321,7 @@ func GetCovidDetails(db *sql.DB) {
 			week_start,
 			week_end,
 			cases_weekly,
-			case_cumulative,
+			cases_cumulative,
 			case_rate_weekly,
 			case_rate_cumulative,
 			percent_tested_positive_weekly,
