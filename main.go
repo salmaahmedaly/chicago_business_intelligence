@@ -1,5 +1,6 @@
 package main
 
+
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -16,6 +17,7 @@ package main
 //
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
@@ -191,15 +193,13 @@ type CCVIJsonRecords []struct {
 	Community_name             string `json:"community_area_name"`
 	CCVI_score                 string `json:"ccvi_score"`
 	CCVI_category              string `json:"ccvi_category"`
-	Location                   struct {
-		Coordinates [2]float64 `json:"coordinates"`
-	} `json:"location"`
 }
+
 
 // Declare my database connection
 var db *sql.DB
 
-// The main package can has the init function.
+// The main package can has the init function. 
 // The init function will be triggered before the main function
 
 func init() {
@@ -224,7 +224,7 @@ func init() {
 
 	//Option 4
 	//Database application running on Google Cloud Platform.
-	db_connection := "user=postgres dbname=chicago_business_intelligence password=root host=/cloudsql/chicago-business-intel:us-central1:mypostgres sslmode=disable port = 5432"
+	db_connection := "user=postgres dbname=chicago_business_intelligence password=root host=/cloudsql/ADD_YOUR_CONNECTION_NAME_FROM_GCP sslmode=disable port = 5432"
 
 	db, err = sql.Open("postgres", db_connection)
 	if err != nil {
@@ -241,41 +241,9 @@ func init() {
 
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////
-
-func GetZipCode(lat, lon float64) string {
-	location := geocoder.Location{Latitude: lat, Longitude: lon}
-	addressList, err := geocoder.GeocodingReverse(location)
-	if err != nil || len(addressList) == 0 {
-		return "" // Handle errors or missing data gracefully
-	}
-	return addressList[0].PostalCode
-}
-
-func GetAirportName(lat, lon float64) string {
-	// O'Hare Airport Coordinates
-	ohareLat, ohareLon := 41.9803, -87.9090
-	// Midway Airport Coordinates
-	midwayLat, midwayLon := 41.7868, -87.7522
-
-	// Function to calculate approximate distance
-	distance := func(lat1, lon1, lat2, lon2 float64) float64 {
-		return (lat1-lat2)*(lat1-lat2) + (lon1-lon2)*(lon1-lon2)
-	}
-
-	// Threshold (approximate small radius)
-	threshold := 0.0025 // Adjust as needed
-
-	// Check proximity
-	if distance(lat, lon, ohareLat, ohareLon) < threshold {
-		return "Ohare"
-	} else if distance(lat, lon, midwayLat, midwayLon) < threshold {
-		return "Midway"
-	}
-
-	return "" // Not near an airport
-}
 
 func main() {
 
@@ -311,8 +279,9 @@ func main() {
 		go GetCommunityAreaUnemployment(db)
 		go GetBuildingPermits(db)
 		go GetTaxiTrips(db)
-		go GetCovidDetails(db)
-		go GetCCVIDetails(db)
+
+		// go GetCovidDetails(db)
+		// go GetCCVIDetails(db)
 
 		http.HandleFunc("/", handler)
 
@@ -337,8 +306,10 @@ func main() {
 
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////
+
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	name := os.Getenv("PROJECT_ID")
@@ -565,7 +536,6 @@ func GetTaxiTrips(db *sql.DB) {
 
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -624,7 +594,7 @@ func GetCommunityAreaUnemployment(db *sql.DB) {
 
 	// There are 77 known community areas in the data set
 	// So, set limit to 100.
-	var url = "https://data.cityofchicago.org/resource/iqnk-2tcu.json?$limit=500"
+	var url = "https://data.cityofchicago.org/resource/iqnk-2tcu.json?$limit=100"
 
 	tr := &http.Transport{
 		MaxIdleConns:       10,
@@ -1193,260 +1163,41 @@ func GetBuildingPermits(db *sql.DB) {
 
 func GetCovidDetails(db *sql.DB) {
 
-	fmt.Println("GetCovidDetails: Collecting Covid Data")
-
-	// create table
-	drop_table := `drop table if exists covid_data`
-	_, err := db.Exec(drop_table)
-	if err != nil {
-		panic(err)
-	}
-
-	create_table := `CREATE TABLE IF NOT EXISTS "covid_data" (
-						"id"   SERIAL ,
-						"zip_code" VARCHAR(255),
-						"week_number" VARCHAR(255),
-						"week_start" TIMESTAMP WITH TIME ZONE,
-						"week_end" TIMESTAMP WITH TIME ZONE,
-						"cases_weekly" VARCHAR(255),
-						"cases_cumulative" VARCHAR(255),
-						"case_rate_weekly" VARCHAR(255),
-						"case_rate_cumulative" VARCHAR(255),
-						"percent_tested_positive_weekly" VARCHAR(255),
-						"percent_tested_positive_cumulative" VARCHAR(255),
-						"population" VARCHAR(255),
-						PRIMARY KEY ("id")
-					);`
-	_, _err := db.Exec(create_table)
-	if _err != nil {
-		panic(_err)
-	}
-
-	fmt.Println("Created Table for Covid Data")
-
-	// While doing unit-testing keep the limit value to 500
-	// later you could change it to 1000, 2000, 10,000, etc.
-	var url = "https://data.cityofchicago.org/resource/yhhz-zm2v.json?$limit=500"
-
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    300 * time.Second,
-		DisableCompression: true,
-	}
-
-	client := &http.Client{Transport: tr}
-
-	res, err := client.Get(url)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Received data from SODA REST API for COVID")
-
-	body, _ := ioutil.ReadAll(res.Body)
-	var covid_data_list CovidJsonRecords
-	json.Unmarshal(body, &covid_data_list)
-
-	s := fmt.Sprintf("\n\n COVID: number of SODA records received = %d\n\n", len(covid_data_list))
-	io.WriteString(os.Stdout, s)
-
-	for i := 0; i < len(covid_data_list); i++ {
-
-		zip_code := covid_data_list[i].Zip_code
-		if zip_code == "" {
-			continue
-		}
-
-		week_number := covid_data_list[i].Week_number
-		if week_number == "" {
-			continue
-		}
-
-		week_start := covid_data_list[i].Week_start
-		if week_start == "" {
-			continue
-		}
-
-		week_end := covid_data_list[i].Week_end
-		if week_end == "" {
-			continue
-		}
-
-		cases_weekly := covid_data_list[i].Cases_weekly
-		if cases_weekly == "" {
-			continue
-		}
-
-		cases_cumulative := covid_data_list[i].Cases_cumulative
-		if cases_cumulative == "" {
-			continue
-		}
-
-		case_rate_weekly := covid_data_list[i].Case_rate_weekly
-		if case_rate_weekly == "" {
-			continue
-		}
-
-		case_rate_cumulative := covid_data_list[i].Case_rate_cumulative
-		if case_rate_cumulative == "" {
-			continue
-		}
-
-		percent_tested_positive_weekly := covid_data_list[i].Percent_tested_positive_weekly
-		if percent_tested_positive_weekly == "" {
-			continue
-		}
-
-		percent_tested_positive_cumulative := covid_data_list[i].Percent_tested_positive_cumulative
-		if percent_tested_positive_cumulative == "" {
-			continue
-		}
-
-		population := covid_data_list[i].Population
-		if population == "" {
-			continue
-		}
-
-		sql := `INSERT INTO covid_data ("zip_code", "week_number", "week_start", "week_end", "cases_weekly", "cases_cumulative", "case_rate_weekly", "case_rate_cumulative", "percent_tested_positive_weekly", "percent_tested_positive_cumulative", "population") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-		, $11)`
-
-		_, err = db.Exec(
-			sql,
-			zip_code,
-			week_number,
-			week_start,
-			week_end,
-			cases_weekly,
-			cases_cumulative,
-			case_rate_weekly,
-			case_rate_cumulative,
-			percent_tested_positive_weekly,
-			percent_tested_positive_cumulative,
-			population)
-
-		if err != nil {
-			panic(err)
-		}
-	}
-
+	fmt.Println("ADD-YOUR-CODE-HERE - To Implement GetCovidDetails")
+	
 }
 
-// //////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////////
-// Sample dataset reviewed:
-// "geography_type":"CA",
-// "community_area_or_zip":"70",
-// "community_area_name":"Ashburn",
-// "ccvi_score":"45.1",
-// "ccvi_category":"MEDIUM",
-// "rank_socioeconomic_status":"34",
-// "rank_household_composition":"32",
-// "rank_adults_no_pcp":"28",
-// "rank_cumulative_mobility_ratio":"45",
-// "rank_frontline_essential_workers":"48",
-// "rank_age_65_plus":"29",
-// "rank_comorbid_conditions":"33",
-// "rank_covid_19_incidence_rate":"59",
-// "rank_covid_19_hospital_admission_rate":"66",
-// "rank_covid_19_crude_mortality_rate":"39",
-// "location":{"type":"Point",
-//
-//	"coordinates":
-//			0	-87.7083657043
-//			1	41.7457577128
-//
-// ":@computed_region_rpca_8um6":"8",
-// ":@computed_region_vrxf_vc4k":"69",
-// ":@computed_region_6mkv_f3dw":"4300",
-// ":@computed_region_bdys_3d7i":"199",
-// ":@computed_region_43wa_7qmu":"30"
-// //////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+//Sample dataset reviewed:
+//"geography_type":"CA",
+//"community_area_or_zip":"70",
+//"community_area_name":"Ashburn",
+//"ccvi_score":"45.1",
+//"ccvi_category":"MEDIUM",
+//"rank_socioeconomic_status":"34",
+//"rank_household_composition":"32",
+//"rank_adults_no_pcp":"28",
+//"rank_cumulative_mobility_ratio":"45",
+//"rank_frontline_essential_workers":"48",
+//"rank_age_65_plus":"29",
+//"rank_comorbid_conditions":"33",
+//"rank_covid_19_incidence_rate":"59",
+//"rank_covid_19_hospital_admission_rate":"66",
+//"rank_covid_19_crude_mortality_rate":"39",
+//"location":{"type":"Point",
+//			"coordinates":
+//					0	-87.7083657043
+//					1	41.7457577128
+//":@computed_region_rpca_8um6":"8",
+//":@computed_region_vrxf_vc4k":"69",
+//":@computed_region_6mkv_f3dw":"4300",
+//":@computed_region_bdys_3d7i":"199",
+//":@computed_region_43wa_7qmu":"30"
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 func GetCCVIDetails(db *sql.DB) {
-	fmt.Println("GetCCVIDetails: Collecting CCVI Data")
 
-	// Drop existing table
-	drop_table := `drop table if exists ccvi_data`
-	_, err := db.Exec(drop_table)
-	if err != nil {
-		log.Fatalf("Error dropping ccvi_data table: %v", err)
-	}
-
-	// Create table
-	create_table := `CREATE TABLE IF NOT EXISTS "ccvi_data" (
-						"id" SERIAL PRIMARY KEY,
-						"geography_type" VARCHAR(255),
-						"community_area_or_zip" VARCHAR(255),
-						"community_area_name" VARCHAR(255),
-						"ccvi_score" VARCHAR(255),
-						"ccvi_category" VARCHAR(255),
-						"latitude" DOUBLE PRECISION,
-						"longitude" DOUBLE PRECISION,
-						"zip_code" VARCHAR(255)
-					);`
-
-	_, err = db.Exec(create_table)
-	if err != nil {
-		log.Fatalf("Error creating ccvi_data table: %v", err)
-	}
-
-	fmt.Println("Created Table for CCVI Data")
-
-	// Fetch data
-	var url = "https://data.cityofchicago.org/resource/xhc6-88s9.json"
-
-	res, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error fetching CCVI data: %v", err)
-	}
-	defer res.Body.Close()
-
-	// Parse JSON
-	body, _ := ioutil.ReadAll(res.Body)
-	var ccvi_data_list CCVIJsonRecords
-	err = json.Unmarshal(body, &ccvi_data_list)
-	if err != nil {
-		log.Fatalf("Error unmarshalling CCVI data: %v", err)
-	}
-
-	fmt.Printf("CCVI records received: %d\n", len(ccvi_data_list))
-
-	// Process data
-	for i := 0; i < len(ccvi_data_list); i++ {
-		latitude := ccvi_data_list[i].Location.Coordinates[1]
-		longitude := ccvi_data_list[i].Location.Coordinates[0]
-
-		// Check valid latitude and longitude
-		if latitude == 0.0 || longitude == 0.0 {
-			continue
-		}
-
-		// Get zip code
-		zip_code := GetZipCode(latitude, longitude)
-		if zip_code == "" {
-			continue
-		}
-
-		// Insert data
-		sql := `INSERT INTO ccvi_data (
-			"geography_type", "community_area_or_zip", "community_area_name", 
-			"ccvi_score", "ccvi_category", "latitude", "longitude", "zip_code") 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-
-		_, err = db.Exec(sql,
-			ccvi_data_list[i].Geography_type,
-			ccvi_data_list[i].Community_area_or_ZIP_code,
-			ccvi_data_list[i].Community_name,
-			ccvi_data_list[i].CCVI_score,
-			ccvi_data_list[i].CCVI_category,
-			latitude,
-			longitude,
-			zip_code)
-
-		if err != nil {
-			log.Printf("Error inserting CCVI record: %v", err)
-		}
-	}
-	fmt.Println("Completed inserting CCVI data")
+	fmt.Println("ADD-YOUR-CODE-HERE - To Implement GetCCVIDetails")
+	
 }
