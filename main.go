@@ -879,7 +879,7 @@ func GetBuildingPermits(db *sql.DB) {
 		// // print something to see the data
 		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type", "permit_code", "total_fee", "latitude", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "latitude", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
 
 		_, err = db.Exec(
 			sql,
