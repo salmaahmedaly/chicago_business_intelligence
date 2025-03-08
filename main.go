@@ -849,7 +849,15 @@ func GetBuildingPermits(db *sql.DB) {
 		}
 
 		xcordinate := building_data_list[i].Xcoordinate
+		if xcordinate == "" {
+			continue
+		}
+
 		ycordinate := building_data_list[i].Ycoordinate
+		if ycordinate == "" {
+			continue
+		}
+
 		// latitutde := building_data_list[i].Latitude
 		// longitude := building_data_list[i].Longitude
 		// census_tract := building_data_list[i].CensusTract
