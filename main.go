@@ -129,13 +129,12 @@ type UnemploymentJsonRecords []struct {
 }
 
 type BuildingPermitsJsonRecords []struct {
-	PermitID      string `json:"id"`      // permit_id
-	PermitCode    string `json:"permit_"` // permit_code
+	PermitID      string `json:"id"`
 	PermitType    string `json:"permit_type"`
 	TotalFee      string `json:"total_fee"`
-	CommunityArea string `json:"community_area"`
 	Latitude      string `json:"latitude"`
 	Longitude     string `json:"longitude"`
+	CommunityArea string `json:"community_area"`
 }
 
 type CovidJsonRecords []struct {
@@ -765,15 +764,18 @@ func GetBuildingPermits(db *sql.DB) {
 	}
 
 	create_table := `CREATE TABLE IF NOT EXISTS "building_permits" (
-						"permit_id" VARCHAR(255) UNIQUE,
-						"permit_type" VARCHAR(255),
-						"permit_code" VARCHAR(255),
-						"total_fee" VARCHAR(255),
-						"latitude" VARCHAR(255),
-						"longitude" VARCHAR(255),
-						"community_area" VARCHAR(255),
-						PRIMARY KEY ("permit_id")
-					);`
+		"id" SERIAL, 
+		"permit_id" VARCHAR(255),  
+		"permit_code" VARCHAR(255),  
+		"permit_type" VARCHAR(255),  
+		"total_fee" VARCHAR(255),
+		"community_area" VARCHAR(255), 
+		"latitude" DOUBLE PRECISION,
+		"longitude" DOUBLE PRECISION,
+		"zip_code" VARCHAR(255),
+		
+		PRIMARY KEY ("id") 
+	);`
 
 	_, _err := db.Exec(create_table)
 	if _err != nil {
@@ -785,7 +787,6 @@ func GetBuildingPermits(db *sql.DB) {
 	// While doing unit-testing keep the limit value to 500
 	// later you could change it to 1000, 2000, 10,000, etc.
 	var url = "https://data.cityofchicago.org/resource/ydr8-5enu.json?$limit=50"
-
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    300 * time.Second,
@@ -826,32 +827,46 @@ func GetBuildingPermits(db *sql.DB) {
 			continue
 		}
 
-		permit_code := building_data_list[i].PermitCode
-		if permit_code == "" {
-			continue
-		}
+		// permit_code := building_data_list[i].PermitCode
+		// if permit_code == "" {
+		// 	continue
+		// }
 
 		total_fee := building_data_list[i].TotalFee
 		if total_fee == "" {
 			continue
 		}
 
-		latitude := building_data_list[i].Latitude
-		if latitude == "" {
-			continue
-		}
-
-		longitude := building_data_list[i].Longitude
-		if longitude == "" {
-			continue
-		}
 		community_area := building_data_list[i].CommunityArea
 		if community_area == "" {
 			continue
 		}
+		// census_tract := building_data_list[i].CensusTract
 
-		// print something to see the data
-		fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
+		// // Convert X/Y Coordinates to Float64
+		// xcoordinate, err := strconv.ParseFloat(building_data_list[i].Xcoordinate, 64)
+		// if err != nil {
+		// 	xcoordinate = 0.0
+		// }
+
+		// ycoordinate, err := strconv.ParseFloat(building_data_list[i].Ycoordinate, 64)
+		// if err != nil {
+		// 	ycoordinate = 0.0
+		// }
+
+		// // Try to get ZIP code using X/Y coordinates first
+		// var zip_code string
+		// if xcoordinate != 0.0 && ycoordinate != 0.0 {
+		// 	zip_code = GetZipCode(ycoordinate, xcoordinate) // Geocoder uses lat, long (y, x)
+		// }
+
+		// // If no zip_code found, try using Census Tract
+		// if zip_code == "" && census_tract != "" {
+		// 	zip_code = GetZipCodeFromCensusTract(census_tract)
+		// }
+
+		// // print something to see the data
+		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
 
 		sql := `INSERT INTO building_permits ("permit_id", "permit_type", "permit_code", "total_fee", "latitude", "longitude", "community_area") values($1, $2, $3, $4, $5, $6, $7)`
 
