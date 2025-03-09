@@ -1201,11 +1201,26 @@ func GetCCVIDetails(db *sql.DB) {
 	// Fetch data
 	var url = "https://data.cityofchicago.org/resource/xhc6-88s9.json"
 
-	res, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error fetching CCVI data: %v", err)
+	tr := &http.Transport{
+		MaxIdleConns:          10,
+		IdleConnTimeout:       1000 * time.Second,
+		TLSHandshakeTimeout:   1000 * time.Second,
+		ExpectContinueTimeout: 1000 * time.Second,
+		DisableCompression:    true,
+		Dial: (&net.Dialer{
+			Timeout:   1000 * time.Second,
+			KeepAlive: 1000 * time.Second,
+		}).Dial,
+		ResponseHeaderTimeout: 1000 * time.Second,
 	}
-	defer res.Body.Close()
+
+	client := &http.Client{Transport: tr}
+
+	res, err := client.Get(url)
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Parse JSON
 	body, _ := ioutil.ReadAll(res.Body)
