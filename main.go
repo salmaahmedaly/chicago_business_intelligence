@@ -280,9 +280,8 @@ func main() {
 		go GetCommunityAreaUnemployment(db)
 		go GetBuildingPermits(db) //TODO: convert coordinates to lat and long then zip code
 		go GetTaxiTrips(db)       //all set!
-
-		// go GetCovidDetails(db)
-		// go GetCCVIDetails(db)
+		go GetCovidDetails(db)
+		go GetCCVIDetails(db)
 
 		http.HandleFunc("/", handler)
 
@@ -357,6 +356,7 @@ func GetTaxiTrips(db *sql.DB) {
 						"dropoff_centroid_longitude" DOUBLE PRECISION, 
 						"pickup_zip_code" VARCHAR(255), 
 						"dropoff_zip_code" VARCHAR(255), 
+						"pickup_airport" VARCHAR(255),
 						PRIMARY KEY ("id") 
 					);`
 
@@ -487,7 +487,7 @@ func GetTaxiTrips(db *sql.DB) {
 		}
 
 		// Comment the following line while not unit-testing
-		fmt.Println(pickup_location)
+		// fmt.Println(pickup_location)
 
 		// pickup_address_list, _ := geocoder.GeocodingReverse(pickup_location)
 		// pickup_address := pickup_address_list[0]
@@ -532,8 +532,10 @@ func GetTaxiTrips(db *sql.DB) {
 			continue
 		}
 
+		pickup_airport := GetAirportName(pickup_centroid_latitude_float, pickup_centroid_longitude_float)
+
 		sql := `INSERT INTO taxi_trips ("trip_id", "trip_start_timestamp", "trip_end_timestamp", "pickup_centroid_latitude", "pickup_centroid_longitude", "dropoff_centroid_latitude", "dropoff_centroid_longitude", "pickup_zip_code", 
-			"dropoff_zip_code") values($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+			"dropoff_zip_code", "pickup_airport") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 		_, err = db.Exec(
 			sql,
@@ -545,7 +547,8 @@ func GetTaxiTrips(db *sql.DB) {
 			dropoff_centroid_latitude,
 			dropoff_centroid_longitude,
 			pickup_zip_code,
-			dropoff_zip_code)
+			dropoff_zip_code,
+			pickup_airport)
 
 		if err != nil {
 			panic(err)
@@ -843,16 +846,16 @@ func GetBuildingPermits(db *sql.DB) {
 
 	body, _ := ioutil.ReadAll(res.Body)
 	fmt.Println("Building Permits: Received data from SODA REST API for Building Permits")
-	fmt.Println(string(body))
+	// fmt.Println(string(body))
 
 	var building_data_list BuildingPermitsJsonRecords
-	fmt.Println("Building Permits: Unmarshalling JSON data")
-	fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
+	// fmt.Println("Building Permits: Unmarshalling JSON data")
+	// fmt.Println("Building Permits: Number of records received = ", len(building_data_list))
 	json.Unmarshal(body, &building_data_list)
-	fmt.Println("Building Permits: Unmarshalling JSON data completed")
-	fmt.Println("Building Permits: Number of records received after unmarshal= ", len(building_data_list))
+	// fmt.Println("Building Permits: Unmarshalling JSON data completed")
+	// fmt.Println("Building Permits: Number of records received after unmarshal= ", len(building_data_list))
 	// print first 5 records
-	fmt.Println("Building Permits: First 5 records received after unmarshal= ", building_data_list[:5])
+	// fmt.Println("Building Permits: First 5 records received after unmarshal= ", building_data_list[:5])
 
 	s := fmt.Sprintf("\n\n Building Permits: number of SODA records received... = %d\n\n", len(building_data_list))
 	io.WriteString(os.Stdout, s)
@@ -863,8 +866,8 @@ func GetBuildingPermits(db *sql.DB) {
 		// There are different methods to deal with messy/dirty/missing data.
 		// We will use the simplest method: drop records that have messy/dirty/missing data
 		// Any record that has messy/dirty/missing data we don't enter it in the data lake/table
-		fmt.Println("Building Permits: Processing Record Number: ", i)
-		fmt.Println("Building Permits: Processing Record Number: ", building_data_list[i])
+		// fmt.Println("Building Permits: Processing Record Number: ", i)
+		// fmt.Println("Building Permits: Processing Record Number: ", building_data_list[i])
 		permit_id := building_data_list[i].PermitID
 		if permit_id == "" {
 			continue
@@ -945,7 +948,6 @@ func GetBuildingPermits(db *sql.DB) {
 
 	fmt.Println("Completed Inserting Rows into the Building Permits Table")
 	// number of rows inserted into the building_permits table
-	fmt.Println("Number of rows inserted into the building_permits table: ", len(building_data_list))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
