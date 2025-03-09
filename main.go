@@ -129,14 +129,13 @@ type UnemploymentJsonRecords []struct {
 }
 
 type BuildingPermitsJsonRecords []struct {
-	PermitID    string `json:"id"`
-	PermitType  string `json:"permit_type"`
-	TotalFee    string `json:"total_fee"`
-	Xcoordinate string `json:"xcoordinate"`
-	Ycoordinate string `json:"ycoordinate"`
-	// Latitude      string `json:"latitude"`
-	// Longitude     string `json:"longitude"`
-	CommunityArea string `json:"community_area"`
+	PermitID         string `json:"id"`
+	PermitType       string `json:"permit_type"`
+	TotalFee         string `json:"total_fee"`
+	Street_number    string `json:"street_number"`
+	Street_direction string `json:"street_direction"`
+	Street_name      string `json:"street_name"`
+	CommunityArea    string `json:"community_area"`
 }
 
 type CovidJsonRecords []struct {
@@ -196,6 +195,31 @@ func GetAirportName(lat, lon float64) string {
 
 	return "" // Not near an airport
 
+}
+
+func GetLatLonFromAddress(streetNumber, streetDirection, streetName string) (float64, float64, error) {
+
+	geocoder.ApiKey = "AIzaSyD_P6F4hYJk3AY6XkL7gr2mLKSodSqGXp0"
+
+	number, err := strconv.Atoi(streetNumber)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid street number: %s", streetNumber)
+	}
+	fullAddress := fmt.Sprintf("%s %s %s, Chicago, Illinois, United States", streetNumber, streetDirection, streetName)
+	address := geocoder.Address{
+		Street:  fmt.Sprintf("%s %s", streetDirection, streetName),
+		Number:  number,
+		City:    "Chicago",
+		State:   "Illinois",
+		Country: "United States",
+	}
+
+	location, err := geocoder.Geocoding(address)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error geocoding address %s: %v", fullAddress, err)
+	}
+
+	return location.Latitude, location.Longitude, nil
 }
 
 // Declare my database connection
@@ -812,8 +836,12 @@ func GetBuildingPermits(db *sql.DB) {
 		"permit_type" VARCHAR(255),  
 		"total_fee" VARCHAR(255),
 		"community_area" VARCHAR(255), 
-		"xcordinate" DOUBLE PRECISION,
-		"ycordinate" DOUBLE PRECISION,
+		street_number VARCHAR(255),
+		street_direction VARCHAR(255),
+		street_name VARCHAR(255),
+		latitude DOUBLE PRECISION,
+		longitude DOUBLE PRECISION,
+		"zipcode" VARCHAR(255),
 		
 		PRIMARY KEY ("id") 
 	);`
@@ -888,56 +916,39 @@ func GetBuildingPermits(db *sql.DB) {
 			continue
 		}
 
-		xcordinate := building_data_list[i].Xcoordinate
-		if xcordinate == "" {
+		streetNumber := building_data_list[i].Street_number
+		if streetNumber == "" {
 			continue
 		}
 
-		ycordinate := building_data_list[i].Ycoordinate
-		if ycordinate == "" {
+		streetDirection := building_data_list[i].Street_direction
+		if streetDirection == "" {
 			continue
 		}
 
-		// latitutde := building_data_list[i].Latitude
-		// longitude := building_data_list[i].Longitude
-		// census_tract := building_data_list[i].CensusTract
+		streetName := building_data_list[i].Street_name
+		if streetName == "" {
+			continue
+		}
 
-		// // Convert X/Y Coordinates to Float64
-		// xcoordinate, err := strconv.ParseFloat(building_data_list[i].Xcoordinate, 64)
-		// if err != nil {
-		// 	xcoordinate = 0.0
-		// }
+		latitude, longitude, err := GetLatLonFromAddress(streetNumber, streetDirection, streetName)
+		if err != nil {
+			fmt.Println("Error getting Lat/Lon:", err)
+			continue
+		}
 
-		// ycoordinate, err := strconv.ParseFloat(building_data_list[i].Ycoordinate, 64)
-		// if err != nil {
-		// 	ycoordinate = 0.0
-		// }
+		zipCode := GetZipCode(latitude, longitude)
 
-		// // Try to get ZIP code using X/Y coordinates first
-		// var zip_code string
-		// if xcoordinate != 0.0 && ycoordinate != 0.0 {
-		// 	zip_code = GetZipCode(ycoordinate, xcoordinate) // Geocoder uses lat, long (y, x)
-		// }
-
-		// // If no zip_code found, try using Census Tract
-		// if zip_code == "" && census_tract != "" {
-		// 	zip_code = GetZipCodeFromCensusTract(census_tract)
-		// }
-
-		// // print something to see the data
-		// fmt.Println(permit_id, permit_type, permit_code, total_fee, latitude, longitude, community_area)
-
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "xcordinate", "ycordinate",  "community_area") values($1, $2, $3, $4, $5, $6)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "latitude", "longitude",  "community_area", "zipcode") values($1, $2, $3, $4, $5, $6, $7)`
 
 		_, err = db.Exec(
 			sql,
 			permit_id,
 			permit_type,
 			total_fee,
-			xcordinate,
-			ycordinate,
-			// latitutde,
-			// longitude,
+			latitude,
+			longitude,
+			zipCode,
 			community_area)
 
 		if err != nil {
