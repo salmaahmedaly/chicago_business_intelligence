@@ -292,7 +292,7 @@ func main() {
 		// An example of your services URL: https://go-microservice-23zzuv4hksp-uc.a.run.app
 		// Use the browser and navigate to your service URL to to kick-start your service
 
-		log.Print("starting CBI Microservices ...")
+		log.Print("starting CBI Microservices for demo...")
 
 		// Pull the data once a day
 		// You might need to pull Taxi Trips and COVID data on daily basis
