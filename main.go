@@ -80,6 +80,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kelvins/geocoder"
@@ -306,6 +307,7 @@ func main() {
 		go GetTaxiTrips(db)       //all set!
 		go GetCovidDetails(db)
 		go GetCCVIDetails(db)
+		go GetZipCommunityMapping(db)
 
 		http.HandleFunc("/", handler)
 
@@ -1273,4 +1275,148 @@ func GetCCVIDetails(db *sql.DB) {
 	}
 	fmt.Println("Completed inserting CCVI data")
 
+}
+
+// Mapping of ZIP codes to Community Names
+var zipToCommunity = map[string]string{
+	"60601": "Loop",
+	"60602": "Loop",
+	"60603": "Loop",
+	"60604": "Loop",
+	"60605": "Loop, Near South Side",
+	"60606": "Loop, Near West Side",
+	"60607": "Loop, Near West Side, Near South Side",
+	"60608": "Bridgeport, Lower West Side, McKinley Park, Near West Side, North Lawndale, South Lawndale",
+	"60609": "Armour Square, Bridgeport, Douglas, Fuller Park, Gage Park, Grand Boulevard, McKinley Park, New City, Washington Park",
+	"60610": "Near North Side, Near West Side",
+	"60611": "Near North Side",
+	"60612": "Near West Side, West Town",
+	"60613": "Lake view, North Center, Uptown",
+	"60614": "Lincoln Park, Logan Square",
+	"60615": "Grand Boulevard, Hyde Park, Kenwood, Washington Park",
+	"60616": "Armour Square, Bridgeport, Douglas, Lower West Side, Near South Side",
+	"60617": "Avalon Park, Calumet Heights, East Side, South Chicago, South Deering",
+	"60618": "Avondale, Irving Park, North Center",
+	"60619": "Avalon Park, Burnside, Calumet Heights, Chatham, Greater Grand Crossing, Roseland, South Shore",
+	"60620": "Auburn Gresham, Beverly, Chatham, Greater Grand Crossing, Roseland, Washington Heights",
+	"60621": "Englewood, Greater Grand Crossing, Washington Park",
+	"60622": "Humboldt Park, Logan Square, Near North Side, West Town",
+	"60623": "North Lawndale, South Lawndale",
+	"60624": "East Garfield Park, Humboldt Park, North Lawndale, West Garfield Park",
+	"60625": "Albany Park, Lincoln Square, North Park",
+	"60626": "Rogers Park",
+	"60627": "Riverdale",
+	"60628": "Pullman, Roseland, Washington Heights, West Pullman",
+	"60629": "Chicago Lawn, Clearing, Gage Park, Garfield Ridge, West Elsdon, West Lawn",
+	"60630": "Albany Park, Forest Glen, Irving Park, Jefferson Park, Portage Park",
+	"60631": "Edison Park, Norwood Park",
+	"60632": "Archer Heights, Brighton Park, Gage Park, Garfield Ridge, West Elsdon",
+	"60633": "Hegewisch, South Deering",
+	"60634": "Belmont Cragin, Dunning, Montclare, Portage Park",
+	"60635": "Austin, Belmont Cragin, Dunning, Montclare",
+	"60636": "Chicago Lawn, Gage Park, West Englewood",
+	"60637": "Greater Grand Crossing, Hyde Park, South Shore, Washington Park, Woodlawn",
+	"60638": "Clearing, Garfield Ridge",
+	"60639": "Austin, Belmont Cragin, Hermosa, Humboldt Park, Logan Square",
+	"60640": "Edgewater, Lincoln Square, Uptown",
+	"60641": "Avondale, Belmont Cragin, Hermosa, Irving Park, Portage Park",
+	"60642": "Beverly",
+	"60643": "Beverly, Morgan Park, Washington Heights, West Pullman",
+	"60644": "Austin",
+	"60645": "West Ridge",
+	"60646": "Forest Glen, Jefferson Park, North Park, Norwood Park",
+	"60647": "Hermosa, Humboldt Park, Logan Square, West Town",
+	"60649": "South Shore",
+	"60651": "Austin, Humboldt Park",
+	"60652": "Ashburn",
+	"60653": "Douglas, Grand Boulevard, Kenwood, Oakland",
+	"60655": "Beverly, Morgan Park, Mount Greenwood",
+	"60656": "OHare",
+	"60657": "Lake view, North Center",
+	"60659": "North Park, West Ridge",
+	"60660": "Edgewater",
+	"60661": "Loop, Near West Side",
+	"60664": "Near West Side",
+	"60666": "OHare",
+	"60680": "Near West Side",
+	"60681": "Near West Side",
+}
+
+// Fetch community numbers from API and store mappings in PostgreSQL
+func GetZipCommunityMapping(db *sql.DB) {
+	fmt.Println("Fetching Community Data from API")
+
+	// Drop and create table
+	dropTable := `DROP TABLE IF EXISTS zip_community_map`
+	_, err := db.Exec(dropTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	createTable := `CREATE TABLE IF NOT EXISTS zip_community_map (
+		id SERIAL PRIMARY KEY,
+		zip_code VARCHAR(10),
+		community_name VARCHAR(255),
+		community_number INT
+	);`
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Created Table for ZIP Code to Community Mapping")
+
+	// Fetch community data from API
+	url := "https://data.cityofchicago.org/resource/igwz-8jzy.json"
+	client := &http.Client{Timeout: 300 * time.Second}
+
+	res, err := client.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	body, _ := ioutil.ReadAll(res.Body)
+
+	var communityData []struct {
+		CommunityName string `json:"community"`
+		AreaNumber    string `json:"area_number"`
+	}
+
+	json.Unmarshal(body, &communityData)
+	fmt.Println("Received", len(communityData), "Community Records")
+
+	// Convert API community names to uppercase
+	apiCommunityMap := make(map[string]int)
+	for _, data := range communityData {
+		upperCommunity := strings.ToUpper(data.CommunityName) // Convert to uppercase
+		communityNumber, _ := strconv.Atoi(data.AreaNumber)
+		apiCommunityMap[upperCommunity] = communityNumber
+	}
+
+	// Process ZIP Code mappings
+	for zip, communityList := range zipToCommunity {
+		communities := strings.Split(communityList, ", ")
+
+		for _, community := range communities {
+			// Convert community name to uppercase before lookup
+			upperCommunity := strings.ToUpper(community)
+
+			// Fetch correct community number from API response
+			communityNumber, exists := apiCommunityMap[upperCommunity]
+			if !exists {
+				fmt.Printf("Warning: No community number found for %s\n", upperCommunity)
+				communityNumber = 0
+			}
+
+			// Insert into database (separate row for each community)
+			sqlStatement := `INSERT INTO zip_community_map (zip_code, community_name, community_number) VALUES ($1, $2, $3)`
+			_, err = db.Exec(sqlStatement, zip, upperCommunity, communityNumber)
+			if err != nil {
+				fmt.Printf("Error inserting mapping for ZIP %s - Community %s: %v\n", zip, upperCommunity, err)
+			}
+		}
+	}
+
+	fmt.Println("Completed inserting ZIP-Community mappings")
 }
