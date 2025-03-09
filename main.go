@@ -1368,19 +1368,25 @@ func GetZipCommunityMapping(db *sql.DB) {
 
 	// Fetch community data from API
 	url := "https://data.cityofchicago.org/resource/igwz-8jzy.json"
-	client := &http.Client{Timeout: 300 * time.Second}
+
+	tr := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    300 * time.Second,
+		DisableCompression: true,
+	}
+
+	client := &http.Client{Transport: tr}
 
 	res, err := client.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer res.Body.Close()
 
 	body, _ := ioutil.ReadAll(res.Body)
 
 	var communityData []struct {
 		CommunityName string `json:"community"`
-		AreaNumber    string `json:"area_number"`
+		AreaNumber    string `json:"area_numbe"`
 	}
 
 	json.Unmarshal(body, &communityData)
