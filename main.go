@@ -939,7 +939,7 @@ func GetBuildingPermits(db *sql.DB) {
 
 		zipCode := GetZipCode(latitude, longitude)
 
-		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "latitude", "longitude",  "community_area", "zipcode") values($1, $2, $3, $4, $5, $6, $7)`
+		sql := `INSERT INTO building_permits ("permit_id", "permit_type",  "total_fee", "latitude", "longitude",  "community_area", "street_number", "street_direction", "street_name" ,"zipcode") values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 		_, err = db.Exec(
 			sql,
@@ -948,8 +948,11 @@ func GetBuildingPermits(db *sql.DB) {
 			total_fee,
 			latitude,
 			longitude,
-			zipCode,
-			community_area)
+			community_area,
+			streetNumber,
+			streetDirection,
+			streetName,
+			zipCode)
 
 		if err != nil {
 			panic(err)
