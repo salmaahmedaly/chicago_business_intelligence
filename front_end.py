@@ -8,7 +8,7 @@ app = Flask(__name__)
 DB_USER = "postgres"
 DB_NAME = "chicago_business_intelligence"
 DB_PASSWORD = "root"
-DB_HOST = "/cloudsql/chicago-business-intel:us-central1:mypostgres"  # Cloud SQL Connection
+DB_HOST = "/cloudsql/chicago-business-intel:us-central1:mypostgres"
 DB_PORT = "5432"
 
 def get_db_connection():
@@ -38,7 +38,6 @@ def get_taxi_trips():
         cur.close()
         conn.close()
 
-        # Convert result to JSON
         taxi_trips = [
             {
                 "trip_id": row[1],
@@ -59,4 +58,6 @@ def get_taxi_trips():
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8082)), debug=True)
+    port = int(os.environ.get("PORT", 8082))  # Read the PORT environment variable
+    app.run(host="0.0.0.0", port=port, debug=True)
+

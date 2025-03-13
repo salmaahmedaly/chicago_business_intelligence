@@ -10,8 +10,8 @@ COPY . .
 # Install dependencies
 RUN pip install flask psycopg2
 
-# Expose port 8082 for the front-end
+# Expose port
 EXPOSE 8082
 
-# Run Flask app
+# Run Flask app with correct port
 CMD ["python", "frontend.py"]
