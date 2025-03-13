@@ -20,6 +20,7 @@ def get_db_connection():
             host=DB_HOST,
             port=DB_PORT
         )
+        print("✅ Successfully connected to database")
         return conn
     except Exception as e:
         print(f"❌ Error connecting to database: {e}")
@@ -52,12 +53,13 @@ def get_taxi_trips():
                 "pickup_airport": row[10]
             } for row in rows
         ]
-
+        print("✅ Successfully fetched taxi trips")
         return jsonify(taxi_trips)
     except Exception as e:
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8082))  # Read the PORT environment variable
+    print(f"Starting server on port {port}")
     app.run(host="0.0.0.0", port=port, debug=True)
 
