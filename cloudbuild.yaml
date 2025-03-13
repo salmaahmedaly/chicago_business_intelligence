@@ -23,29 +23,29 @@ steps:
 
  # Build, push and  Deploy the Python front-end service
   - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "gcr.io/chicago-business-intel/frontend-service", "-f", "Dockerfile.frontend", "."]
+    args: ['build', '-t', 'gcr.io/chicago-business-intel/frontend-service', '-f', 'Dockerfile.frontend', '.']
+  
   - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/chicago-business-intel/frontend-service"]
+    args: ['push', 'gcr.io/chicago-business-intel/frontend-service']
+  
+  
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args: [
-      "run", "deploy", "frontend-service",
-      "--image", "gcr.io/chicago-business-intel/frontend-service",
-      "--region", "us-central1",
-      "--add-cloudsql-instances", "chicago-business-intel:us-central1:mypostgres",
-      "--platform", "managed",
-      "--port", "8082",
-      "--allow-unauthenticated"
+      'run', 'deploy', 'frontend-service',
+      '--image', 'gcr.io/chicago-business-intel/frontend-service',
+      '--region', 'us-central1',
+      '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres',
+      '--platform', 'managed',
+      '--port', '8082',
+      '--allow-unauthenticated'
     ]
-
-
 
 
 images:
 - gcr.io/chicago-business-intel/go-microservice
 - gcr.io/chicago-business-intel/pgadmin
 - gcr.io/chicago-business-intel/frontend-service
-
 
 
 
