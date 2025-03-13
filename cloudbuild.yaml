@@ -20,30 +20,32 @@ steps:
 - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
   entrypoint: gcloud
   args: ['run', 'deploy','go-microservice', '--image','gcr.io/chicago-business-intel/go-microservice', '--region','us-central1', '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres','--platform','managed', '--port','8080', '--allow-unauthenticated']
+
+ # Build, push and  Deploy the Python front-end service
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "gcr.io/$PROJECT_ID/frontend-service", "-f", "Dockerfile.frontend", "."]
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/frontend-service"]
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args: [
+      "run", "deploy", "frontend-service",
+      "--image", "gcr.io/$PROJECT_ID/frontend-service",
+      "--region", "us-central1",
+      "--add-cloudsql-instances", "chicago-business-intel:us-central1:mypostgres",
+      "--platform", "managed",
+      "--port", "8082",
+      "--allow-unauthenticated"
+    ]
+
+
+
+
 images:
 - gcr.io/chicago-business-intel/go-microservice
 - gcr.io/chicago-business-intel/pgadmin
+- gcr.io/chicago-business-intel/frontend-service
 
-# # Build frontend service
-# - name: "gcr.io/cloud-builders/docker"
-#   args: ['build', '-t', 'gcr.io/chicago-business-intel/frontend-service', '-f', 'Dockerfile.frontend', '.']
-
-# # Push frontend service image to Google Container Registry
-# - name: "gcr.io/cloud-builders/docker"
-#   args: ['push', 'gcr.io/chicago-business-intel/frontend-service']
-
-# # Deploy frontend service to Google Cloud Run
-# - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-#   entrypoint: gcloud
-#   args: [
-#     'run', 'deploy', 'frontend-service',
-#     '--image', 'gcr.io/chicago-business-intel/frontend-service',
-#     '--region', 'us-central1',
-#     '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres',
-#     '--platform', 'managed',
-#     '--port', '8082',
-#     '--allow-unauthenticated'
-#   ]
 
 
 
