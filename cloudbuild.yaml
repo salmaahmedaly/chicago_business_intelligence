@@ -21,24 +21,24 @@ steps:
   entrypoint: gcloud
   args: ['run', 'deploy','go-microservice', '--image','gcr.io/chicago-business-intel/go-microservice', '--region','us-central1', '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres','--platform','managed', '--port','8080', '--allow-unauthenticated']
 
-  - name: "gcr.io/cloud-builders/docker"
-    args: ['build', '-t', 'gcr.io/chicago-business-intel/frontend-service', '-f', 'Dockerfile.frontend', '.']
+- name: "gcr.io/cloud-builders/docker"
+  args: ['build', '-t', 'gcr.io/chicago-business-intel/frontend-service', '-f', 'Dockerfile.frontend', '.']
   
-  # - name: "gcr.io/cloud-builders/docker"
-  #   args: ['push', 'gcr.io/chicago-business-intel/frontend-service']
+- name: "gcr.io/cloud-builders/docker"
+  args: ['push', 'gcr.io/chicago-business-intel/frontend-service']
   
   
-  # - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-  #   entrypoint: gcloud
-  #   args: [
-  #     'run', 'deploy', 'frontend-service',
-  #     '--image', 'gcr.io/chicago-business-intel/frontend-service',
-  #     '--region', 'us-central1',
-  #     '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres',
-  #     '--platform', 'managed',
-  #     '--port', '8082',
-  #     '--allow-unauthenticated'
-  #   ]
+- name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+  entrypoint: gcloud
+  args: [
+      'run', 'deploy', 'frontend-service',
+      '--image', 'gcr.io/chicago-business-intel/frontend-service',
+      '--region', 'us-central1',
+      '--add-cloudsql-instances', 'chicago-business-intel:us-central1:mypostgres',
+      '--platform', 'managed',
+      '--port', '8082',
+      '--allow-unauthenticated'
+    ]
 
 
 images:
