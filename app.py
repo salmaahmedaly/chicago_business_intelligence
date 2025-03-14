@@ -30,16 +30,26 @@ def taxi_trip_first():
         sslmode='disable'
     )
 
+    # if connection is successful, print connection successful
+    if conn:
+        print("Connection successful", conn)
+    else:
+        print("Connection unsuccessful")
+
     try:
         with conn.cursor() as cur:
             # Just fetch 1 row from the taxi_trip table
-            cur.execute("SELECT * FROM taxi_trips LIMIT 1;")
-            row = cur.fetchone()
+            # cur.execute("SELECT * FROM taxi_trips;")
+            # row = cur.fetchone()
+            cur.execute("SELECT COUNT(*) FROM taxi_trip;")
+            count = cur.fetchone()
+            print(count)
+
 
             # row is a tuple of columns e.g. (col1, col2, col3, ...)
             # For example, you can return it as plain text or JSON:
-            if row:
-                return f"First row: {row}"
+            if count:
+                return f" count: {count}"
             else:
                 return "No rows found in taxi_trip."
     finally:
