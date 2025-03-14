@@ -33,7 +33,7 @@ def taxi_trip_first():
     try:
         with conn.cursor() as cur:
             # Just fetch 1 row from the taxi_trip table
-            cur.execute("SELECT * FROM taxi_trip LIMIT 1;")
+            cur.execute("SELECT * FROM taxi_trips LIMIT 1;")
             row = cur.fetchone()
 
             # row is a tuple of columns e.g. (col1, col2, col3, ...)
