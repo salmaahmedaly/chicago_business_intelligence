@@ -1,17 +1,18 @@
-# Use official Python image
-FROM python:3.9
+# Start from a lightweight Python base image
+FROM python:3.9-slim
 
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy source files
+# Copy requirements and install
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the source code
 COPY . .
 
-# Install dependencies
-RUN pip install flask psycopg2
-
-# Expose port
+# Expose port 8082 to match your cloudbuild.yaml steps
 EXPOSE 8082
 
-# Run Flask app with correct port
-CMD ["python", "frontend.py"]
+# Start the Flask application
+CMD ["python", "app.py"]
