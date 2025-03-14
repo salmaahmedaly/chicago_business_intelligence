@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import psycopg2
 import os
+import sys
 
 app = Flask(__name__)
 
@@ -23,13 +24,13 @@ def get_db_connection():
         )
         return conn
     except Exception as e:
-        print(f"❌ Error connecting to database: {e}")
+        print(f"❌ Error connecting to database: {e}", file=sys.stderr)
         return None
 
 # 📢 Debugging: Log all incoming requests
 @app.before_request
 def log_request_info():
-    print(f"📢 Received request: {request.method} {request.path}")
+    print(f"📢 Received request: {request.method} {request.path}", file=sys.stderr)
 
 # ✅ Define the API endpoint correctly
 @app.route("/api/taxi_trips", methods=["GET"])
@@ -68,5 +69,5 @@ def get_taxi_trips():
 # ✅ Ensure Flask listens on the correct PORT (Cloud Run requires this)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8082))  # Default to 8082
-    print(f"🚀 Starting Flask on PORT {port}...")
+    print(f"🚀 Starting Flask on PORT {port}...", file=sys.stderr)
     app.run(host="0.0.0.0", port=port, debug=True)
