@@ -37,14 +37,17 @@ def log_request_info():
 def get_taxi_trips():
     conn = get_db_connection()
     if not conn:
+        print("❌ Database connection failed", file=sys.stderr)
         return jsonify({"error": "Database connection failed"}), 500
 
     try:
+        print("🚀 Fetching data from database...", file=sys.stderr)
         cur = conn.cursor()
         cur.execute("SELECT * FROM public.taxi_trips LIMIT 5;")
         rows = cur.fetchall()
         cur.close()
         conn.close()
+        print("✅ Database connection closed", file=sys.stderr)
 
         # Convert result to JSON format
         taxi_trips = [
@@ -61,9 +64,10 @@ def get_taxi_trips():
                 "pickup_airport": row[9]
             } for row in rows
         ]
-
+        print("✅ Data fetched successfully", file=sys.stderr)
         return jsonify(taxi_trips)
     except Exception as e:
+        print(f"❌ Failed to fetch data: {e}", file=sys.stderr)
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 # ✅ Ensure Flask listens on the correct PORT (Cloud Run requires this)
