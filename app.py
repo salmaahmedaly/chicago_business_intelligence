@@ -41,7 +41,7 @@ def taxi_trip_first():
             # Just fetch 1 row from the taxi_trip table
             # cur.execute("SELECT * FROM taxi_trips;")
             # row = cur.fetchone()
-            cur.execute("SELECT COUNT(*) FROM taxi_trip;")
+            cur.execute("SELECT COUNT(*) FROM taxi_trips;")
             count = cur.fetchone()
             print(count)
 
