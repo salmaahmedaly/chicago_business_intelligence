@@ -365,11 +365,11 @@ func GetTaxiTrips(db *sql.DB) {
 	// geocoder.ApiKey = "AIzaSyD_P6F4hYJk3AY6XkL7gr2mLKSodSqGXp0"
 	// "AIzaSyD737jPAyi_Ji947tJFgeRynYBUSRQeTqw"
 	geocoder.ApiKey = "AIzaSyD_P6F4hYJk3AY6XkL7gr2mLKSodSqGXp0"
-	// drop_table := `drop table if exists taxi_trips`
-	// _, err := db.Exec(drop_table)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	drop_table := `drop table if exists taxi_trips`
+	_, err := db.Exec(drop_table)
+	if err != nil {
+		panic(err)
+	}
 
 	create_table := `CREATE TABLE IF NOT EXISTS "taxi_trips" (
 						"id"   SERIAL , 
