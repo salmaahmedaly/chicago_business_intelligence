@@ -365,15 +365,15 @@ func GetTaxiTrips(db *sql.DB) {
 	// geocoder.ApiKey = "AIzaSyD_P6F4hYJk3AY6XkL7gr2mLKSodSqGXp0"
 	// "AIzaSyD737jPAyi_Ji947tJFgeRynYBUSRQeTqw"
 	geocoder.ApiKey = "AIzaSyD_P6F4hYJk3AY6XkL7gr2mLKSodSqGXp0"
-	drop_table := `drop table if exists taxi_trips`
-	_, err := db.Exec(drop_table)
-	if err != nil {
-		panic(err)
-	}
+	// drop_table := `drop table if exists taxi_trips`
+	// _, err := db.Exec(drop_table)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	create_table := `CREATE TABLE IF NOT EXISTS "taxi_trips" (
 						"id"   SERIAL , 
-						"trip_id" VARCHAR(255), 
+						"trip_id" VARCHAR(255) UNIQUE, 
 						"trip_start_timestamp" TIMESTAMP WITH TIME ZONE, 
 						"trip_end_timestamp" TIMESTAMP WITH TIME ZONE, 
 						"pickup_centroid_latitude" DOUBLE PRECISION, 
@@ -398,7 +398,7 @@ func GetTaxiTrips(db *sql.DB) {
 
 	// Get the the Taxi Trips for Taxi medallions list
 
-	var url = "https://data.cityofchicago.org/resource/wrvz-psew.json?$limit=500"
+	var url = "https://data.cityofchicago.org/resource/wrvz-psew.json?$limit=50"
 
 	tr := &http.Transport{
 		MaxIdleConns:          10,
@@ -429,7 +429,7 @@ func GetTaxiTrips(db *sql.DB) {
 
 	// Get the Taxi Trip list for rideshare companies like Uber/Lyft list
 	// Transportation-Network-Providers-Trips:
-	var url_2 = "https://data.cityofchicago.org/resource/m6dm-c72p.json?$limit=500"
+	var url_2 = "https://data.cityofchicago.org/resource/m6dm-c72p.json?$limit=50"
 
 	res_2, err := http.Get(url_2)
 	if err != nil {
